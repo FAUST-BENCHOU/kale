@@ -47,6 +47,8 @@ Kale bridges this gap by providing a simple UI to define Kubeflow Pipelines
 workflows directly from your JupyterLab interface, without the need to change a
 single line of code.
 
+See the `Kale v2.0 Demo` video at the bottom of the `README` for more details.
+
 Read more about Kale and how it works in this Medium post:
 [Automating Jupyter Notebook Deployments to Kubeflow Pipelines with Kale](https://medium.com/kubeflow/automating-jupyter-notebook-deployments-to-kubeflow-pipelines-with-kale-a4ede38bea1f)
 
@@ -298,3 +300,11 @@ Currently installed git hooks:
 
 - `pre-commit`: Run a prettier check on staged files, using
   [pretty-quick](https://github.com/azz/pretty-quick)
+
+#### Kale v2.0 Demo
+Watch the KubeFlow Kale Demo - Introduction video below.
+  
+[![Demo](https://img.youtube.com/vi/UGLJuqJqJYY/hqdefault.jpg)](https://www.youtube.com/watch?v=UGLJuqJqJYY)
+
+
+
