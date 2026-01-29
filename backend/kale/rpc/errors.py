@@ -9,6 +9,7 @@ from kale.rpc.log import KALE_LOG_FILE
 
 class Code(enum.Enum):
     """Error codes."""
+
     OK = 0
     IMPORT_ERROR = 1
     ENCODING_ERROR = 2
@@ -35,9 +36,13 @@ class _RPCError(Exception):
             self.trans_id = trans_id
 
     def to_dict(self):
-        return {"code": self.code.value, "err_message": self.message,
-                "err_details": self.details, "err_cls": self.name,
-                "trans_id": self.trans_id}
+        return {
+            "code": self.code.value,
+            "err_message": self.message,
+            "err_details": self.details,
+            "err_cls": self.name,
+            "trans_id": self.trans_id,
+        }
 
     def serialize(self):
         return serialize(self.to_dict())
@@ -45,18 +50,21 @@ class _RPCError(Exception):
 
 class RPCImportError(_RPCError):
     """Import Error."""
+
     name = "importError"
     code = Code.IMPORT_ERROR
 
 
 class RPCEncodingError(_RPCError):
     """Encoding Error."""
+
     name = "encodingError"
     code = Code.ENCODING_ERROR
 
 
 class RPCNotFoundError(_RPCError):
     """Not Found Error."""
+
     name = "notFoundError"
     code = Code.NOT_FOUND
     message = "Not Found"
@@ -64,6 +72,7 @@ class RPCNotFoundError(_RPCError):
 
 class RPCInternalError(_RPCError):
     """Internal Error."""
+
     name = "internalError"
     code = Code.INTERNAL_ERROR
     message = "Internal Error"
@@ -71,6 +80,7 @@ class RPCInternalError(_RPCError):
 
 class RPCServiceUnavailableError(_RPCError):
     """Service Unavailable Error."""
+
     name = "serviceUnavailableError"
     code = Code.SERVICE_UNAVAILABLE
     message = "Service is Unavailable"

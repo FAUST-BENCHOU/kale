@@ -173,8 +173,10 @@ const StyledTextField = styled(TextField)({
   }
 });
 
-export interface IInputProps
-  extends Omit<TextFieldProps, 'onChange' | 'value'> {
+export interface IInputProps extends Omit<
+  TextFieldProps,
+  'onChange' | 'value'
+> {
   value: string | number;
   regex?: string;
   regexErrorMsg?: string;

@@ -21,8 +21,9 @@ def _load_config():
         #  the correct `ConfigException`. We cannot yet upgrade the package
         #  because `kfserving` relies on `kubernetes==10.0.1`
         except TypeError:
-            raise kubernetes.config.ConfigException("Invalid kube-config file."
-                                                    " No configuration found.")
+            raise kubernetes.config.ConfigException(
+                "Invalid kube-config file. No configuration found."
+            )
 
 
 def get_v1_client():
@@ -48,8 +49,11 @@ def get_co_client():
 
 def annotate_object(group, version, plural, name, namespace, annotations):
     """Annotate a custom Kubernetes object."""
-    patch = {"apiVersion": "%s/%s" % (group, version),
-             "metadata": {"name": name, "annotations": annotations}}
+    patch = {
+        "apiVersion": "%s/%s" % (group, version),
+        "metadata": {"name": name, "annotations": annotations},
+    }
     k8s_client = get_co_client()
-    k8s_client.patch_namespaced_custom_object(group, version, namespace,
-                                              plural, name, patch)
+    k8s_client.patch_namespaced_custom_object(
+        group, version, namespace, plural, name, patch
+    )

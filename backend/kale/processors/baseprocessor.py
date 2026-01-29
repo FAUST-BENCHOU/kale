@@ -19,10 +19,12 @@ class BaseProcessor(ABC):
     no_op_step: Step
     config_cls = PipelineConfig
 
-    def __init__(self,
-                 config: Optional[PipelineConfig] = None,
-                 skip_validation: bool = False,
-                 **kwargs):
+    def __init__(
+        self,
+        config: Optional[PipelineConfig] = None,
+        skip_validation: bool = False,
+        **kwargs,
+    ):
         self.config = config
         if not config and not skip_validation:
             self.config = self.config_cls(**kwargs)
@@ -58,7 +60,8 @@ class BaseProcessor(ABC):
             log.warning("Could not retrieve PodDefaults. Reason: %s", e)
         self.pipeline.config.steps_defaults["labels"] = {
             **self.pipeline.config.steps_defaults.get("labels", dict()),
-            **_pod_defaults_labels}
+            **_pod_defaults_labels,
+        }
 
     def _apply_steps_defaults(self):
         for step in self.pipeline.steps:

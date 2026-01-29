@@ -96,17 +96,29 @@ lint-labextension: ## Lint labextension code (eslint + prettier)
 	@printf "$(BLUE)Linting labextension...\n$(NC)"
 	cd labextension && $(JLPM) lint:check
 
+format: format-backend format-labextension ## Format all code
+
+format-backend: ## Format backend code (ruff)
+	@printf "$(BLUE)Formatting backend...\n$(NC)"
+	$(UV) run ruff check --fix backend
+	$(UV) run ruff format backend
+
 format-labextension: ## Format labextension code
+	@printf "$(BLUE)Formatting labextension...\n$(NC)"
 	cd labextension && $(JLPM) prettier && $(JLPM) eslint
 
 ##@ Building
 
-build-backend: ## Build backend wheel
+build-backend: ## Build backend wheel (runs linting first, but continues on formatting issues)
+	@printf "$(BLUE)Running lint checks before build...\n$(NC)"
+	@$(MAKE) lint-backend || true
 	@printf "$(BLUE)Building backend wheel with version $(DEV_VERSION)...\n$(NC)"
 	cd backend && SETUPTOOLS_SCM_PRETEND_VERSION=$(DEV_VERSION) $(UV) build
 	@printf "$(GREEN)Wheel built: backend/dist/\n$(NC)"
 
-build-labextension: ## Build labextension wheel
+build-labextension: ## Build labextension wheel (runs linting first)
+	@printf "$(BLUE)Running lint checks before build...\n$(NC)"
+	@$(MAKE) lint-labextension || true
 	@printf "$(BLUE)Building labextension...\n$(NC)"
 	cd labextension && $(JLPM) build:prod
 	cd labextension && $(UV) build

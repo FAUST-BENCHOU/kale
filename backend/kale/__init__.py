@@ -37,12 +37,14 @@ from typing import NamedTuple, Any
 
 class PipelineParam(NamedTuple):
     """A pipeline parameter."""
+
     param_type: str
     param_value: Any
 
 
 class Artifact(NamedTuple):
     """A Step artifact."""
+
     name: str
     type: str
     is_input: bool = False

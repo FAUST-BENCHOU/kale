@@ -30,10 +30,9 @@ class PythonProcessor(BaseProcessor):
 
     _ALLOWED_ARG_KINDS = (Parameter.POSITIONAL_OR_KEYWORD,)
 
-    def __init__(self,
-                 pipeline_function: Callable,
-                 config: PipelineConfig = None,
-                 **kwargs):
+    def __init__(
+        self, pipeline_function: Callable, config: PipelineConfig = None, **kwargs
+    ):
         self.pipeline_fn = pipeline_function
         # self.pipeline.origin = PipelineOrigin.PYTHON
 
@@ -84,15 +83,18 @@ class PythonProcessor(BaseProcessor):
 
         _params_names = set(self.pipeline.pipeline_parameters)
         if set(step.outs).intersection(_params_names):
-            raise RuntimeError("Some steps' return values are overriding"
-                               " pipeline arguments. Make sure that pipeline"
-                               " arguments are used uniquely across the"
-                               " pipeline.")
+            raise RuntimeError(
+                "Some steps' return values are overriding"
+                " pipeline arguments. Make sure that pipeline"
+                " arguments are used uniquely across the"
+                " pipeline."
+            )
 
         # a step can consume a subset of the pipeline's parameters
         consumed_params = set(step.ins).intersection(_params_names)
-        step.parameters = {k: self.pipeline.pipeline_parameters[k]
-                           for k in consumed_params}
+        step.parameters = {
+            k: self.pipeline.pipeline_parameters[k] for k in consumed_params
+        }
 
         self._link_step(step)
 
@@ -115,8 +117,7 @@ class PythonProcessor(BaseProcessor):
             func_node = None
             if isinstance(node, ast.Assign):
                 if not isinstance(node.value, ast.Call):
-                    raise RuntimeError(
-                        "ast.Assign value is not a ast.Call node")
+                    raise RuntimeError("ast.Assign value is not a ast.Call node")
                 func_node = node.value
             if isinstance(node, ast.Expr):
                 if not isinstance(node.value, ast.Call):
@@ -129,18 +130,22 @@ class PythonProcessor(BaseProcessor):
 
             fn_name = func_node.func.id
             if any([not isinstance(arg, ast.Name) for arg in func_node.args]):
-                raise ValueError("Function '%s' is called with some constant"
-                                 " arguments" % fn_name)
+                raise ValueError(
+                    "Function '%s' is called with some constant arguments" % fn_name
+                )
 
     def _fn_accepts_only_kwargs(self):
         signature = inspect.signature(self.pipeline_fn)
         for param in signature.parameters.values():
             if param.kind not in self._ALLOWED_ARG_KINDS:
-                raise RuntimeError("All pipeline function arguments must be"
-                                   " either positional or keyword")
+                raise RuntimeError(
+                    "All pipeline function arguments must be"
+                    " either positional or keyword"
+                )
             if param.default == Parameter.empty:
-                raise RuntimeError("All pipeline function arguments must have"
-                                   " a default value")
+                raise RuntimeError(
+                    "All pipeline function arguments must have a default value"
+                )
 
     def _fn_args_ensure_supported_types(self):
         signature = inspect.signature(self.pipeline_fn)
@@ -150,15 +155,17 @@ class PythonProcessor(BaseProcessor):
             # FIXME: Ensure we support all the KFP-supported types
             #  https://github.com/kubeflow/pipelines/blob/9af3e79c10b9bb1ac1adc7bf8c1354a16fa7b461/sdk/python/kfp/components/_data_passing.py#L107-L116
             if not isinstance(param.default, (int, float, str, bool)):
-                raise RuntimeError("Pipeline parameters must be of primitive"
-                                   " types: int, float, str, or bool. Pipeline"
-                                   " parameter %s is of type %s"
-                                   % (param.name, type(param.default)))
+                raise RuntimeError(
+                    "Pipeline parameters must be of primitive"
+                    " types: int, float, str, or bool. Pipeline"
+                    " parameter %s is of type %s" % (param.name, type(param.default))
+                )
 
     def _get_fn_kwargs(self) -> Dict[str, PipelineParam]:
         kwargs = dict()
         signature = inspect.signature(self.pipeline_fn)
         for param in signature.parameters.values():
-            kwargs[param.name] = PipelineParam(type(param.default).__name__,
-                                               param.default)
+            kwargs[param.name] = PipelineParam(
+                type(param.default).__name__, param.default
+            )
         return kwargs

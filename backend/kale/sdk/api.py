@@ -8,8 +8,7 @@ import logging
 import argparse
 
 from kale.common import utils
-from kale import (Compiler, Step, PythonProcessor, PipelineConfig, StepConfig,
-                  Artifact)
+from kale import Compiler, Step, PythonProcessor, PipelineConfig, StepConfig, Artifact
 
 
 log = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ def pipeline(**kwargs):
     _map = {
         "name": "pipeline_name",
         "experiment": "experiment_name",
-        "description": "pipeline_description"
+        "description": "pipeline_description",
     }
     for old, new in _map.items():
         try:
@@ -44,7 +43,6 @@ def pipeline(**kwargs):
     def _pipeline(func):
         # do_kwargs correspond to pipeline parameters
         def _do(*args, **do_kwargs):
-
             if not utils.main_source_lives_in_cwd():
                 # XXX: See arrikto/dev#671 for more details
                 raise RuntimeError(
@@ -55,14 +53,19 @@ def pipeline(**kwargs):
                     " directory with `cd %s` and running `python %s`,"
                     " instead.\nPlease reach out to the Arrikto team in case"
                     " you need more information and assistance."
-                    % (sys.argv[0],
-                       os.path.dirname(sys.argv[0]),
-                       os.path.basename(sys.argv[0])))
+                    % (
+                        sys.argv[0],
+                        os.path.dirname(sys.argv[0]),
+                        os.path.basename(sys.argv[0]),
+                    )
+                )
 
             if args:
-                raise RuntimeError("Positional arguments found in pipeline"
-                                   " function call `%s`. Please provide just"
-                                   " keyword arguments." % func.__name__)
+                raise RuntimeError(
+                    "Positional arguments found in pipeline"
+                    " function call `%s`. Please provide just"
+                    " keyword arguments." % func.__name__
+                )
 
             cli_args = _parse_cli_args()
 
@@ -79,19 +82,27 @@ def pipeline(**kwargs):
                     return Compiler(pipeline_obj).compile_and_run()
             else:  # run the pipeline locally
                 return pipeline_obj.run()
+
         return _do
+
     return _pipeline
 
 
 def _parse_cli_args():
     """Parse CLI arguments."""
-    parser = argparse.ArgumentParser(
-        description="Run Kale Pipeline")
-    parser.add_argument("-K", "--kfp", action="store_true",
-                        help="Compile the pipeline to KFP DSL and deploy it")
-    parser.add_argument("-D", "--dry-run", action="store_true",
-                        help=("Compile the pipeline to KFP DSL."
-                              " Requires --kfp."))
+    parser = argparse.ArgumentParser(description="Run Kale Pipeline")
+    parser.add_argument(
+        "-K",
+        "--kfp",
+        action="store_true",
+        help="Compile the pipeline to KFP DSL and deploy it",
+    )
+    parser.add_argument(
+        "-D",
+        "--dry-run",
+        action="store_true",
+        help=("Compile the pipeline to KFP DSL. Requires --kfp."),
+    )
     return parser.parse_args()
 
 
@@ -125,8 +136,11 @@ def artifact(name: str, path: str):
 
     def _(step: Step):
         if not isinstance(step, Step):
-            raise ValueError("You should decorate functions that are decorated"
-                             " with the @step decorator!")
+            raise ValueError(
+                "You should decorate functions that are decorated"
+                " with the @step decorator!"
+            )
         step.artifacts.append(Artifact(name, path))
         return step
+
     return _

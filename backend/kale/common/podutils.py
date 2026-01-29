@@ -13,20 +13,22 @@ from kale.common import k8sutils
 
 NAMESPACE_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 
-K8S_SIZE_RE = re.compile(r'^([0-9]+)(E|Ei|P|Pi|T|Ti|G|Gi|M|Mi|K|Ki){0,1}$')
-K8S_SIZE_UNITS = {"E": 10 ** 18,
-                  "P": 10 ** 15,
-                  "T": 10 ** 12,
-                  "G": 10 ** 9,
-                  "M": 10 ** 6,
-                  "K": 10 ** 3,
-                  "Ei": 2 ** 60,
-                  "Pi": 2 ** 50,
-                  "Ti": 2 ** 40,
-                  "Gi": 2 ** 30,
-                  "Mi": 2 ** 20,
-                  "Ki": 2 ** 10,
-                  "": 2 ** 0}
+K8S_SIZE_RE = re.compile(r"^([0-9]+)(E|Ei|P|Pi|T|Ti|G|Gi|M|Mi|K|Ki){0,1}$")
+K8S_SIZE_UNITS = {
+    "E": 10**18,
+    "P": 10**15,
+    "T": 10**12,
+    "G": 10**9,
+    "M": 10**6,
+    "K": 10**3,
+    "Ei": 2**60,
+    "Pi": 2**50,
+    "Ti": 2**40,
+    "Gi": 2**30,
+    "Mi": 2**20,
+    "Ki": 2**10,
+    "": 2**0,
+}
 
 log = logging.getLogger(__name__)
 
@@ -70,16 +72,22 @@ def get_container_name():
     log.info("Getting the current container name...")
     nb_prefix = os.getenv("NB_PREFIX")
     if nb_prefix:
-        container_name = nb_prefix.split('/')[-1]
+        container_name = nb_prefix.split("/")[-1]
         if container_name:
-            log.info("Using NB_PREFIX env var '%s'. Container name: '%s'" %
-                     (nb_prefix, container_name))
+            log.info(
+                "Using NB_PREFIX env var '%s'. Container name: '%s'"
+                % (nb_prefix, container_name)
+            )
             return container_name
-        log.info("Could not parse NB_PREFIX: '%s'. Falling back to using some"
-                 " heuristics." % nb_prefix)
+        log.info(
+            "Could not parse NB_PREFIX: '%s'. Falling back to using some"
+            " heuristics." % nb_prefix
+        )
     else:
-        log.info("Env variable NB_PREFIX not found. Falling back to finding"
-                 " the container name with some heuristics.")
+        log.info(
+            "Env variable NB_PREFIX not found. Falling back to finding"
+            " the container name with some heuristics."
+        )
 
     # get the pod object and inspect the containers in the spec
     pod = get_pod(get_pod_name(), get_namespace())
@@ -98,45 +106,57 @@ def get_container_name():
         return "main"
     # remove some container names that are supposed to be sidecars
     potentially_sidecar_names = ["proxy", "sidecar", "wait"]
-    candidates = [c for c in container_names
-                  if all([x not in c for x in potentially_sidecar_names])]
+    candidates = [
+        c
+        for c in container_names
+        if all([x not in c for x in potentially_sidecar_names])
+    ]
     if len(candidates) > 1:
-        raise RuntimeError("Too many container candidates.Cannot infer the"
-                           " name of the current container from: %s "
-                           % candidates)
+        raise RuntimeError(
+            "Too many container candidates.Cannot infer the"
+            " name of the current container from: %s " % candidates
+        )
     if len(candidates) > 0:
-        raise RuntimeError("No container names left. Could not infer the name"
-                           " of the running container.")
+        raise RuntimeError(
+            "No container names left. Could not infer the name"
+            " of the running container."
+        )
     log.info("Choosing '%s'" % candidates[0])
     return candidates[0]
 
 
 def _get_pod_container(pod, container_name):
-    container = list(
-        filter(lambda c: c.name == container_name, pod.spec.containers))
+    container = list(filter(lambda c: c.name == container_name, pod.spec.containers))
     assert len(container) <= 1
     if not container:
-        raise RuntimeError("Could not find container '%s' in pod '%s'"
-                           % (container_name, pod.metadata.name))
+        raise RuntimeError(
+            "Could not find container '%s' in pod '%s'"
+            % (container_name, pod.metadata.name)
+        )
     return container[0]
 
 
 def _get_container_image_sha(pod, container_name):
     if not pod.status.container_statuses:
-        raise RuntimeError("Could not retrieve the `container_statuses` field"
-                           " from Pod '%s'" % pod.metadata.name)
-    status = list(filter(lambda s: s.name == container_name,
-                         pod.status.container_statuses))[0]
+        raise RuntimeError(
+            "Could not retrieve the `container_statuses` field"
+            " from Pod '%s'" % pod.metadata.name
+        )
+    status = list(
+        filter(lambda s: s.name == container_name, pod.status.container_statuses)
+    )[0]
     if not status.image_id:
-        raise RuntimeError("Container status for container '%s' in pod '%s' is"
-                           " not set" % (container_name, pod.metadata.name))
+        raise RuntimeError(
+            "Container status for container '%s' in pod '%s' is"
+            " not set" % (container_name, pod.metadata.name)
+        )
     _prefix = "docker-pullable://"
     if not status.image_id.startswith(_prefix):
-        raise RuntimeError("Could not parse imageID of container '%s' in pod"
-                           " '%s': '%s'"
-                           % (container_name, pod.metadata.name,
-                              status.image_id))
-    return status.image_id[len(_prefix):]
+        raise RuntimeError(
+            "Could not parse imageID of container '%s' in pod"
+            " '%s': '%s'" % (container_name, pod.metadata.name, status.image_id)
+        )
+    return status.image_id[len(_prefix) :]
 
 
 def _get_mount_path(container, volume):
@@ -144,8 +164,9 @@ def _get_mount_path(container, volume):
         if volume_mount.name == volume.name:
             return volume_mount.mount_path
 
-    raise RuntimeError("Could not find volume %s in container %s"
-                       % (volume.name, container.name))
+    raise RuntimeError(
+        "Could not find volume %s in container %s" % (volume.name, container.name)
+    )
 
 
 def _list_volumes(client, namespace, pod_name, container_name):
@@ -159,7 +180,8 @@ def _list_volumes(client, namespace, pod_name, container_name):
             continue
 
         pvc = client.read_namespaced_persistent_volume_claim(
-            pvc_spec.claim_name, namespace)
+            pvc_spec.claim_name, namespace
+        )
         mount_path = _get_mount_path(container, volume)
         volume_size = parse_k8s_size(pvc.spec.resources.requests["storage"])
         volumes.append((mount_path, volume, volume_size))
@@ -180,8 +202,7 @@ def get_volume_containing_path(path):
     mounted_vols = list_volumes()
     mount_point = 0
     # get the volumes that contain the input path
-    vols = list(filter(lambda x: path.startswith(x[mount_point]),
-                       mounted_vols))
+    vols = list(filter(lambda x: path.startswith(x[mount_point]), mounted_vols))
     if len(vols) > 0:
         # get vol with longest mount point (i.e. closest to input path)
         return sorted(vols, key=lambda k: len(k[mount_point]), reverse=True)[0]
@@ -229,8 +250,10 @@ def get_docker_base_image():
         image = _get_container_image_sha(pod, container_name)
     except RuntimeError as e:
         log.warning("Could not retrieve the container image sha: %s", str(e))
-        log.warning("Using its tag instead. The pipeline won't be reproducible"
-                    " if a new image is pushed with the same tag.")
+        log.warning(
+            "Using its tag instead. The pipeline won't be reproducible"
+            " if a new image is pushed with the same tag."
+        )
         image = _get_pod_container(pod, container_name).image
     log.info("Retrieved image: %s", image)
     return image
@@ -239,8 +262,7 @@ def get_docker_base_image():
 def print_volumes():
     """Print the current volumes."""
     headers = ("Mount Path", "Volume Name", "Volume Size")
-    rows = [(path, volume.name, size)
-            for path, volume, size in list_volumes()]
+    rows = [(path, volume.name, size) for path, volume, size in list_volumes()]
     print(tabulate.tabulate(rows, headers=headers))
 
 

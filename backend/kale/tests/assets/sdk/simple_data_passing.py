@@ -8,11 +8,7 @@ def step1():
     return a, b
 
 
-@step(name="step2",
-      retry_count=5,
-      retry_interval="20",
-      retry_factor=2,
-      timeout=5)
+@step(name="step2", retry_count=5, retry_interval="20", retry_factor=2, timeout=5)
 def step2(a, b):
     c = a + b
     print(c)
@@ -26,9 +22,7 @@ def step3(a, c):
 
 
 @pipeline(
-    name="test",
-    experiment="test",
-    steps_defaults={"labels": {"common-label": "true"}}
+    name="test", experiment="test", steps_defaults={"labels": {"common-label": "true"}}
 )
 def mypipeline():
     _b, _a = step1()

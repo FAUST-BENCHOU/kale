@@ -14,22 +14,27 @@ log = logging.getLogger(__name__)
 
 class PipelineParam(NamedTuple):
     """A pipeline parameter."""
+
     param_type: str
     param_value: Any
 
 
-def marshal(ins: List,
-            outs: List,
-            parameters: Dict[str, Union[PipelineParam, Any]] = None,
-            marshal_dir: str = None,
-            introspect: bool = False):
+def marshal(
+    ins: List,
+    outs: List,
+    parameters: Dict[str, Union[PipelineParam, Any]] = None,
+    marshal_dir: str = None,
+    introspect: bool = False,
+):
     """Decorator that ensures proper marshalling happens when the fn is run."""
-    _params = {k: (v if isinstance(v, PipelineParam)
-                   else PipelineParam(type(v), v))
-               for k, v in parameters.items()}
+    _params = {
+        k: (v if isinstance(v, PipelineParam) else PipelineParam(type(v), v))
+        for k, v in parameters.items()
+    }
 
     def _marshal(func):
         return Marshaller(func, ins, outs, _params, marshal_dir, introspect)
+
     return _marshal
 
 
@@ -42,9 +47,16 @@ class Marshaller:
 
 
     """
-    def __init__(self, func, ins: List, outs: List,
-                 parameters: Dict[str, PipelineParam] = None,
-                 marshal_dir=None, introspect=False):
+
+    def __init__(
+        self,
+        func,
+        ins: List,
+        outs: List,
+        parameters: Dict[str, PipelineParam] = None,
+        marshal_dir=None,
+        introspect=False,
+    ):
         self._introspect = introspect
         if introspect:
             self._func = _persistent_locals(func)
@@ -77,27 +89,32 @@ class Marshaller:
         if self._introspect:  # get vars from function locals
             for var_name in self._outs:
                 if var_name not in self._func.locals:
-                    raise RuntimeError("Variable %s not found in function's"
-                                       " locals" % var_name)
+                    raise RuntimeError(
+                        "Variable %s not found in function's locals" % var_name
+                    )
                 marshal_utils.save(self._func.locals[var_name], var_name)
         else:  # get vars from return value
             if len(self._outs) == 0:
                 return
             if isinstance(values, tuple):
                 if len(values) != len(self._outs):
-                    raise RuntimeError("There is a mismatch between the tuple"
-                                       " returned by the functions and its"
-                                       " expected outs. If the functions is"
-                                       " returning a tuple, make sure the "
-                                       " return value it is properly"
-                                       " unpacked.")
+                    raise RuntimeError(
+                        "There is a mismatch between the tuple"
+                        " returned by the functions and its"
+                        " expected outs. If the functions is"
+                        " returning a tuple, make sure the "
+                        " return value it is properly"
+                        " unpacked."
+                    )
                 for name, value in dict(zip(self._outs, values)).items():
                     marshal_utils.save(value, name)
             else:  # any other object?
                 if len(self._outs) > 1:
-                    raise RuntimeError("The function returned a single object,"
-                                       " but there are multiple expected outs:"
-                                       " %s" % str(self._outs))
+                    raise RuntimeError(
+                        "The function returned a single object,"
+                        " but there are multiple expected outs:"
+                        " %s" % str(self._outs)
+                    )
                 marshal_utils.save(values, self._outs[0])
 
 
@@ -124,6 +141,7 @@ class _persistent_locals(object):
     Refer to the docstring of instances for help about the wrapped
     function.
     """
+
     def __init__(self, func):
         self._locals = {}
         self._func = func

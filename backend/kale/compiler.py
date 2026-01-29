@@ -18,8 +18,7 @@ log = logging.getLogger(__name__)
 PY_FN_TEMPLATE = "py_function_template.jinja2"
 NB_FN_TEMPLATE = "new_nb_function_template.jinja2"
 PIPELINE_TEMPLATE = "new_pipeline_template.jinja2"
-PIPELINE_ORIGIN = {"nb": NB_FN_TEMPLATE,
-                   "py": PY_FN_TEMPLATE}
+PIPELINE_ORIGIN = {"nb": NB_FN_TEMPLATE, "py": PY_FN_TEMPLATE}
 
 KFP_DSL_ARTIFACT_IMPORTS = [
     "Dataset",
@@ -27,12 +26,13 @@ KFP_DSL_ARTIFACT_IMPORTS = [
     "Metrics",
     "ClassificationMetrics",
     "Artifact",
-    "HTML"
+    "HTML",
 ]
 
 
 class Artifact(NamedTuple):
     """A Step artifact."""
+
     name: str
     type: str
     is_input: bool = False
@@ -48,6 +48,7 @@ class Compiler:
     The Pipeline object is assumed to provide all the necessary information
     (environment, configuration, etc...) for the script to be compiled.
     """
+
     def __init__(self, pipeline: Pipeline, imports_and_functions: str):
         self.pipeline = pipeline
         self.templating_env = None
@@ -57,8 +58,7 @@ class Compiler:
 
     @staticmethod
     def _get_args():
-        parser = argparse.ArgumentParser(
-            description="Run Kale Pipeline")
+        parser = argparse.ArgumentParser(description="Run Kale Pipeline")
         parser.add_argument("-K", "--kfp", action="store_true")
         return parser.parse_args()
 
@@ -79,9 +79,11 @@ class Compiler:
     def run(self):
         """Run the generated KFP script."""
         if not self.dsl_script_path:
-            raise RuntimeError("The Compiler has yet to generate a new KFP"
-                               " DSL script. Please run the `compile` function"
-                               " first.")
+            raise RuntimeError(
+                "The Compiler has yet to generate a new KFP"
+                " DSL script. Please run the `compile` function"
+                " first."
+            )
         self._run_compiled_code(self.dsl_script_path)
 
     def generate_dsl(self):
@@ -91,8 +93,7 @@ class Compiler:
         """
         # List of lightweight components generated code
         lightweight_components = [
-            self.generate_lightweight_component(step)
-            for step in self.pipeline.steps
+            self.generate_lightweight_component(step) for step in self.pipeline.steps
         ]
         pipeline_code = self.generate_pipeline(lightweight_components)
         return pipeline_code
@@ -103,15 +104,20 @@ class Compiler:
 
         def _encode_source(s):
             # Encode line by line a multiline string
-            return "\n    ".join([line.encode("unicode_escape").decode("utf-8")
-                              for line in s.splitlines()]) # noqa: E128, E261
+            return "\n    ".join(
+                [
+                    line.encode("unicode_escape").decode("utf-8")
+                    for line in s.splitlines()
+                ]
+            )  # noqa: E128, E261
 
         if self.pipeline.processor.id == "nb":
             # Since the code will be wrapped in triple quotes inside the
             # template, we need to escape triple quotes as they will not be
             # escaped by encode("unicode_escape").
-            step.source = [re.sub(r"'''", "\\'\\'\\'", _encode_source(s))
-                           for s in step_source_raw]
+            step.source = [
+                re.sub(r"'''", "\\'\\'\\'", _encode_source(s)) for s in step_source_raw
+            ]
 
         _template_filename = PIPELINE_ORIGIN.get(self.pipeline.processor.id)
         template = self._get_templating_env().get_template(_template_filename)
@@ -120,7 +126,7 @@ class Compiler:
         params_without_defaults = [f"{step.name}_html_report: Output[HTML]"]
         params_with_defaults = []
         step_inputs_list, step_outputs_list = [], []
-        if hasattr(step, 'ins') and step.ins:
+        if hasattr(step, "ins") and step.ins:
             step_inputs_list = sorted(step.ins)
             for var_name in step_inputs_list:
                 # Determine the correct input type based on variable name
@@ -131,7 +137,7 @@ class Compiler:
 
         step_outputs_list = []
 
-        if hasattr(step, 'outs') and step.outs:
+        if hasattr(step, "outs") and step.outs:
             step_outputs_list = sorted(step.outs)
             for var_name in step_outputs_list:
                 output_type = "Model" if "model" in var_name else "Dataset"
@@ -139,14 +145,18 @@ class Compiler:
                     f"{var_name}_output_artifact: Output[{output_type}]"
                 )
 
-        if (hasattr(self.pipeline, 'pipeline_parameters') and self.pipeline.pipeline_parameters):  # noqa: E501
+        if (
+            hasattr(self.pipeline, "pipeline_parameters")
+            and self.pipeline.pipeline_parameters
+        ):  # noqa: E501
             for param_name, param in self.pipeline.pipeline_parameters.items():
                 if isinstance(param, PipelineParam):
                     param_type = param.param_type or "str"
                     param_value_str = repr(param.param_value)
                     clean_param_name = (
                         f"{param_name.lower()}_param"
-                        if param_name.isupper() else param_name
+                        if param_name.isupper()
+                        else param_name
                     )
                     params_with_defaults.append(
                         f"{clean_param_name}: {param_type} = {param_value_str}"
@@ -157,12 +167,16 @@ class Compiler:
 
         # Create pipeline parameter mapping for the template
         pipeline_params = {}
-        if hasattr(self.pipeline, 'pipeline_parameters') and self.pipeline.pipeline_parameters:  # noqa: E501
+        if (
+            hasattr(self.pipeline, "pipeline_parameters")
+            and self.pipeline.pipeline_parameters
+        ):  # noqa: E501
             for param_name, param in self.pipeline.pipeline_parameters.items():
                 if isinstance(param, PipelineParam):
                     clean_param_name = (
                         f"{param_name.lower()}_param"
-                        if param_name.isupper() else param_name
+                        if param_name.isupper()
+                        else param_name
                     )
                     param = {clean_param_name: param.param_value}
                     pipeline_params[param_name] = param
@@ -174,21 +188,13 @@ class Compiler:
         for var_name in step_inputs_list:
             input_type = "Model" if "model" in var_name else "Dataset"
             step_inputs.append(
-                Artifact(
-                    name=f"{var_name}",
-                    type=input_type,
-                    is_input=True
-                )
+                Artifact(name=f"{var_name}", type=input_type, is_input=True)
             )
 
         for var_name in step_outputs_list:
             output_type = "Model" if "model" in var_name else "Dataset"
             step_outputs.append(
-                Artifact(
-                    name=f"{var_name}",
-                    type=output_type,
-                    is_input=False
-                )
+                Artifact(name=f"{var_name}", type=output_type, is_input=False)
             )
 
         packages_list = self._get_package_list_from_imports()
@@ -204,7 +210,7 @@ class Compiler:
             step_inputs=step_inputs,
             step_outputs=step_outputs,
             kfp_dsl_artifact_imports=KFP_DSL_ARTIFACT_IMPORTS,
-            **self.pipeline.config.to_dict()
+            **self.pipeline.config.to_dict(),
         )
         return autopep8.fix_code(fn_code)
 
@@ -215,41 +221,42 @@ class Compiler:
         step_inputs = {}
         step_inputs_sources = {}
         for step in self.pipeline.steps:
-            if hasattr(step, 'ins') and step.ins:
+            if hasattr(step, "ins") and step.ins:
                 step_inputs[step.name] = list(sorted(step.ins))
 
                 step_inputs_sources[step.name] = {}
-                ancestors = graphutils.get_ordered_ancestors(
-                    self.pipeline, step.name)
+                ancestors = graphutils.get_ordered_ancestors(self.pipeline, step.name)
                 for input_var in step_inputs[step.name]:
-                    source_step_name = 'UNKNOWN'
+                    source_step_name = "UNKNOWN"
                     for anc_name in ancestors:
                         anc_step = self.pipeline.get_step(anc_name)
-                        if (hasattr(anc_step, 'outs')
-                                and input_var in anc_step.outs):
+                        if hasattr(anc_step, "outs") and input_var in anc_step.outs:
                             source_step_name = anc_name
                             break
-                    step_inputs_sources[step.name][
-                        input_var] = source_step_name
+                    step_inputs_sources[step.name][input_var] = source_step_name
 
-            if hasattr(step, 'outs') and step.outs:
+            if hasattr(step, "outs") and step.outs:
                 step_outputs[step.name] = list(sorted(step.outs))
 
         pipeline_param_info = {}
 
-        if hasattr(self.pipeline, 'pipeline_parameters') and self.pipeline.pipeline_parameters:  # noqa: E501
+        if (
+            hasattr(self.pipeline, "pipeline_parameters")
+            and self.pipeline.pipeline_parameters
+        ):  # noqa: E501
             for param_name, param in self.pipeline.pipeline_parameters.items():
                 if isinstance(param, PipelineParam):
                     clean_param_name = (
                         f"{param_name.lower()}_param"
-                        if param_name.isupper() else param_name
+                        if param_name.isupper()
+                        else param_name
                     )
                     pipeline_param_info[param_name] = {
-                        'clean_name': clean_param_name,
-                        'type': param.param_type,
-                        'default': param.param_value
+                        "clean_name": clean_param_name,
+                        "type": param.param_type,
+                        "default": param.param_value,
                     }
-        if hasattr(self.pipeline, 'steps') and self.pipeline.steps:
+        if hasattr(self.pipeline, "steps") and self.pipeline.steps:
             # Ensure that the first step is always the pipeline entry point
             component_names = {}
             for step in self.pipeline.steps:
@@ -263,7 +270,7 @@ class Compiler:
             step_inputs_sources=step_inputs_sources,
             pipeline_param_info=pipeline_param_info,
             component_names=component_names,
-            **self.pipeline.config.to_dict()
+            **self.pipeline.config.to_dict(),
         )
         # fix code style using pep8 guidelines
         return autopep8.fix_code(pipeline_code)
@@ -283,26 +290,26 @@ class Compiler:
         else:
             package_names.add("kubeflow-kale")
         package_names.add("kfp>=2.0.0")
-        lines = self.imports_and_functions.strip().split('\n')
+        lines = self.imports_and_functions.strip().split("\n")
 
         for line in lines:
             line = line.strip()
-            if line.startswith('import '):
+            if line.startswith("import "):
                 # For 'import package' or 'import package as alias'
-                parts = line.split(' ')
+                parts = line.split(" ")
                 if len(parts) > 1:
-                    package_name = parts[1].split('.')[0]
-                    if package_name == 'random':
-                        package_name = 'random2'
-                    if package_name == 'sklearn':
-                        package_name = 'scikit-learn'
+                    package_name = parts[1].split(".")[0]
+                    if package_name == "random":
+                        package_name = "random2"
+                    if package_name == "sklearn":
+                        package_name = "scikit-learn"
                     package_names.add(package_name)
-            elif line.startswith('from '):
-                parts = line.split(' ')
+            elif line.startswith("from "):
+                parts = line.split(" ")
                 if len(parts) > 1:
-                    package_name = parts[1].split('.')[0]
-                    if package_name == 'sklearn':
-                        package_name = 'scikit-learn'
+                    package_name = parts[1].split(".")[0]
+                    if package_name == "sklearn":
+                        package_name = "scikit-learn"
                     package_names.add(package_name)
         return sorted(list(package_names))
 
@@ -313,15 +320,15 @@ class Compiler:
         if templates_path:
             loader = FileSystemLoader(templates_path)
         else:
-            loader = PackageLoader('kale', 'templates')
+            loader = PackageLoader("kale", "templates")
         template_env = Environment(loader=loader)
         # add custom filters
-        template_env.filters['add_suffix'] = lambda s, suffix: s + suffix
-        template_env.filters['add_prefix'] = lambda s, prefix: prefix + s
+        template_env.filters["add_suffix"] = lambda s, suffix: s + suffix
+        template_env.filters["add_prefix"] = lambda s, prefix: prefix + s
         # quote a string when it is materialized in the template
-        template_env.filters['quote_if_not_none'] = lambda x: ('"%s"' % x
-                                                               if x is not None
-                                                               else None)
+        template_env.filters["quote_if_not_none"] = lambda x: (
+            '"%s"' % x if x is not None else None
+        )
         self.templating_env = template_env
         return template_env
 
@@ -341,11 +348,12 @@ class Compiler:
 
     def _run_compiled_code(self, script_path: str):
         pipeline_name = self.pipeline.config.pipeline_name
-        pipeline_yaml_path = kfputils.compile_pipeline(script_path,
-                                                       pipeline_name)
-        pipeline_id, version_id = kfputils.upload_pipeline(pipeline_yaml_path,
-                                                           pipeline_name)
+        pipeline_yaml_path = kfputils.compile_pipeline(script_path, pipeline_name)
+        pipeline_id, version_id = kfputils.upload_pipeline(
+            pipeline_yaml_path, pipeline_name
+        )
         kfputils.run_pipeline(
             experiment_name=self.pipeline.config.experiment_name,
             pipeline_id=pipeline_id,
-            version_id=version_id)
+            version_id=version_id,
+        )

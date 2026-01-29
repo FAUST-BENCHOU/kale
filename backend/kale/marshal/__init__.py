@@ -18,5 +18,6 @@ from .decorator import Marshaller
 del get_dispatcher
 
 from kale.common import logutils
+
 logutils.get_or_create_logger(module=__name__, name="marshalling")
 del logutils

@@ -19,6 +19,7 @@ class CustomLogRecord(logging.LogRecord):
     We use a custom log record in order to create custom and compound log
     elements that can be used by the Formatter just like standard properties.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.origin = f"{self.module}:{self.lineno}"
@@ -27,8 +28,7 @@ class CustomLogRecord(logging.LogRecord):
 
 
 def _suppress_handlers(log: logging.Logger) -> List[List[logging.Formatter]]:
-    def _suppress_handlers_for_logger(log: logging.Logger) -> (
-            List[logging.Formatter]):
+    def _suppress_handlers_for_logger(log: logging.Logger) -> List[logging.Formatter]:
         formatters = []
         for h in log.handlers:
             formatters.append(h.formatter)
@@ -42,8 +42,9 @@ def _suppress_handlers(log: logging.Logger) -> List[List[logging.Formatter]]:
     return formatters
 
 
-def _restore_handlers(log: logging.Logger,
-                      formatters: Sequence[logging.Formatter]) -> None:
+def _restore_handlers(
+    log: logging.Logger, formatters: Sequence[logging.Formatter]
+) -> None:
     for i in range(len(formatters)):
         for handler, fmt in zip(log.handlers, formatters[i]):
             handler.setFormatter(fmt)
@@ -55,6 +56,7 @@ class KaleLogger(logging.Logger):
 
     We use a custom logger so that we can have custom methods and attributes.
     """
+
     def newline(self, lines: int = 1):
         """Log an empty line by suppressing logger's formatters.
 
@@ -66,7 +68,7 @@ class KaleLogger(logging.Logger):
         original_formatters = _suppress_handlers(self)
         # Log empty lines
         for _ in range(lines):
-            self.info('')
+            self.info("")
         # Restore original formatters
         _restore_handlers(self, original_formatters)
 
@@ -80,9 +82,15 @@ def _configure_handler(handler, level, formatter):
     handler.setFormatter(formatter)
 
 
-def get_or_create_logger(module, name=None, level=logging.INFO, fmt=None,
-                         file_level=logging.DEBUG, file_fmt=None,
-                         log_path=None):
+def get_or_create_logger(
+    module,
+    name=None,
+    level=logging.INFO,
+    fmt=None,
+    file_level=logging.DEBUG,
+    file_fmt=None,
+    log_path=None,
+):
     """Get or create and return module's logger.
 
     Args:
@@ -115,21 +123,19 @@ def get_or_create_logger(module, name=None, level=logging.INFO, fmt=None,
     log.setLevel(logging.DEBUG)
 
     # Set up handlers
-    log_fmt = fmt or LOG_FMT.format("%-20s" % name if name
-                                    else "%(origin)-20s")
+    log_fmt = fmt or LOG_FMT.format("%-20s" % name if name else "%(origin)-20s")
     stream_handler = logging.StreamHandler()
-    _configure_handler(stream_handler, level, logging.Formatter(log_fmt,
-                                                                DATE_FMT))
+    _configure_handler(stream_handler, level, logging.Formatter(log_fmt, DATE_FMT))
     log.addHandler(stream_handler)
 
     if log_path:
         # if log_path is just a file name, dirname will be empty
         if os.path.dirname(log_path):
             os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        file_handler = logging.FileHandler(filename=os.path.abspath(log_path),
-                                           mode='a')
-        _configure_handler(file_handler, file_level,
-                           logging.Formatter(file_fmt or log_fmt, DATE_FMT))
+        file_handler = logging.FileHandler(filename=os.path.abspath(log_path), mode="a")
+        _configure_handler(
+            file_handler, file_level, logging.Formatter(file_fmt or log_fmt, DATE_FMT)
+        )
         log.addHandler(file_handler)
 
     _loggers[module] = log
