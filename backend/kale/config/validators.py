@@ -35,8 +35,7 @@ class TypeValidator(Validator):
 
     def _validate(self, value):
         if not isinstance(value, self.valid_type):
-            raise ValueError("'%s' must be of type '%s'"
-                             % (value, self.valid_type))
+            raise ValueError("'%s' must be of type '%s'" % (value, self.valid_type))
 
 
 class DictValidator(Validator):
@@ -45,9 +44,9 @@ class DictValidator(Validator):
     key_validator = None
     value_validator = None
 
-    def __init__(self,
-                 key_validator: Validator = None,
-                 value_validator: Validator = None):
+    def __init__(
+        self, key_validator: Validator = None, value_validator: Validator = None
+    ):
         self.key_validator = key_validator or self.key_validator
         if not self.key_validator:
             raise ValueError("Set an appropriate key_validator")
@@ -57,8 +56,10 @@ class DictValidator(Validator):
 
     def _validate(self, dictionary: Dict):
         if not isinstance(dictionary, dict):
-            raise ValueError("Trying to use %s to validate a non dict object"
-                             % self.__class__.__name__)
+            raise ValueError(
+                "Trying to use %s to validate a non dict object"
+                % self.__class__.__name__
+            )
         for k, v in dictionary.items():
             self.key_validator(k)
             self.value_validator(v)
@@ -82,10 +83,13 @@ class RegexValidator(Validator):
         if not isinstance(value, str):
             raise ValueError(
                 "%s cannot validate object of type %s. String expected."
-                % (self.__class__.__name__, str(type(value))))
+                % (self.__class__.__name__, str(type(value)))
+            )
         if not re.match(self.regex, value):
-            raise ValueError("%s: '%s'. Must match regex '%s'"
-                             % (self.error_message, value, self.regex))
+            raise ValueError(
+                "%s: '%s'. Must match regex '%s'"
+                % (self.error_message, value, self.regex)
+            )
         return True
 
 
@@ -101,8 +105,9 @@ class EnumValidator(Validator):
 
     def _validate(self, value: Any):
         if value not in self.enum:
-            raise ValueError("%s: Value %s is not allowed"
-                             % (self.__class__.__name__, str(value)))
+            raise ValueError(
+                "%s: Value %s is not allowed" % (self.__class__.__name__, str(value))
+            )
 
 
 class K8sNameValidator(RegexValidator):
@@ -178,7 +183,7 @@ class K8sLabelsValidator(DictValidator):
 class VolumeTypeValidator(EnumValidator):
     """Validates the type of a Volume."""
 
-    enum = ('pv', 'pvc', 'new_pvc', 'clone')
+    enum = ("pv", "pvc", "new_pvc", "clone")
 
 
 class VolumeAccessModeValidator(EnumValidator):
@@ -196,6 +201,7 @@ class IsLowerValidator(Validator):
 
 class PositiveIntegerValidator(Validator):
     """Validates a Field to be a positive integer."""
+
     def _validate(self, value):
         if not isinstance(value, int):
             raise ValueError("'%s' is not of type 'int'" % value)

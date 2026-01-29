@@ -63,3 +63,48 @@ include = ["kale*"]
 local_scheme = "node-and-date"
 fallback_version = "2.0.0a1"
 root = ".."
+
+# Ruff linting and formatting configuration
+[tool.ruff]
+# Set the maximum line length
+line-length = 88
+
+# Target Python version
+target-version = "py312"
+
+# Exclude common directories
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".eggs",
+    "*.egg",
+    "dist",
+    "build",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+select = [
+    "E9",   # Runtime errors (syntax errors, etc.)
+    "F63",  # Print statements
+    "F7",   # Syntax errors
+    "F82",  # Undefined name
+]
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+# Indent with spaces
+indent-style = "space"
+# Respect magic trailing comma
+skip-magic-trailing-comma = false
+# Automatically detect the appropriate line ending
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+# Use a single line import style
+force-single-line = false
+# Known first party packages
+known-first-party = ["kale"]

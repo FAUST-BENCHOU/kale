@@ -20,14 +20,14 @@ def list_poddefaults(namespace: str = None):
         try:
             namespace = podutils.get_namespace()
         except Exception:
-            raise ValueError("'namespace' cannot be empty when not inside a"
-                             " pod")
+            raise ValueError("'namespace' cannot be empty when not inside a pod")
     api_group = "kubeflow.org"
     api_version = "v1alpha1"
     co_name = "poddefaults"
     co_client = k8sutils.get_co_client()
-    return co_client.list_namespaced_custom_object(api_group, api_version,
-                                                   namespace, co_name)["items"]
+    return co_client.list_namespaced_custom_object(
+        api_group, api_version, namespace, co_name
+    )["items"]
 
 
 def find_applied_poddefaults(pod: V1Pod, poddefaults: List[Dict]):
@@ -47,9 +47,11 @@ def get_poddefault_labels(poddefaults: List[Dict]):
     for pd in poddefaults:
         for k, v in pd["spec"]["selector"].get("matchLabels", {}).items():
             if k in labels and labels[k] != v:
-                raise ValueError("Conflicting label: %s. Found 2 PodDefaults"
-                                 " using the same label but different values:"
-                                 " %s, %s" % (k, labels[k], v))
+                raise ValueError(
+                    "Conflicting label: %s. Found 2 PodDefaults"
+                    " using the same label but different values:"
+                    " %s, %s" % (k, labels[k], v)
+                )
             labels[k] = v
     return labels
 
@@ -58,13 +60,15 @@ def find_poddefault_labels():
     """Find server's labels that correspond to PodDefaults applied."""
     log.info("Retrieving PodDefaults applied to server...")
     applied_poddefaults = find_applied_poddefaults(
-        podutils.get_pod(podutils.get_pod_name(),
-                         podutils.get_namespace()),
-        list_poddefaults())
+        podutils.get_pod(podutils.get_pod_name(), podutils.get_namespace()),
+        list_poddefaults(),
+    )
     pd_names = [pd["metadata"]["name"] for pd in applied_poddefaults]
     log.info("Retrieved applied PodDefaults: %s", pd_names)
 
     labels = get_poddefault_labels(applied_poddefaults)
-    log.info("PodDefault labels applied on server: %s",
-             ", ".join(["%s: %s" % (k, v) for k, v in labels.items()]))
+    log.info(
+        "PodDefault labels applied on server: %s",
+        ", ".join(["%s: %s" % (k, v) for k, v in labels.items()]),
+    )
     return labels

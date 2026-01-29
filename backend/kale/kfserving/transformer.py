@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 class KaleTransformer(kfserving.KFModel):
     """Run a KFServing transformer server."""
+
     def __init__(self, model_name: str, predictor_host: str):
         log.info("Initializing KaleTransformer...")
         super().__init__(model_name)
@@ -37,14 +38,17 @@ class KaleTransformer(kfserving.KFModel):
         # In this way we create the same function but binding it to the
         # module's globals().
         self.fn = types.FunctionType(
-            _fn.__code__, globals(), _fn.__name__,
-            _fn.__defaults__, _fn.__closure__)
+            _fn.__code__, globals(), _fn.__name__, _fn.__defaults__, _fn.__closure__
+        )
 
         log.info("Processing source notebook for imports and functions...")
         processor = NotebookProcessor(
-            nb_path=os.path.join(serveutils.TRANSFORMER_ASSETS_DIR,
-                                 serveutils.TRANSFORMER_SRC_NOTEBOOK_NAME),
-            skip_validation=True)
+            nb_path=os.path.join(
+                serveutils.TRANSFORMER_ASSETS_DIR,
+                serveutils.TRANSFORMER_SRC_NOTEBOOK_NAME,
+            ),
+            skip_validation=True,
+        )
         self.init_code = processor.get_imports_and_functions()
         log.info("Initialization code:\n%s" % self.init_code)
         log.info("Running initialization code...")
@@ -52,8 +56,10 @@ class KaleTransformer(kfserving.KFModel):
 
         log.info("Loading transformer's assets...")
         for file in os.listdir(serveutils.TRANSFORMER_ASSETS_DIR):
-            if file in [serveutils.TRANSFORMER_SRC_NOTEBOOK_NAME,
-                        serveutils.TRANSFORMER_FN_ASSET_NAME]:
+            if file in [
+                serveutils.TRANSFORMER_SRC_NOTEBOOK_NAME,
+                serveutils.TRANSFORMER_FN_ASSET_NAME,
+            ]:
                 continue
             # The marshal mechanism works by looking at the name of the files
             # without extensions.
@@ -69,8 +75,7 @@ class KaleTransformer(kfserving.KFModel):
         log.info("Starting inputs preprocessing...")
         log.info("Input data: %s" % utils.shorten_long_string(inputs))
         res = self._run_transformer(inputs)
-        log.info("Processed data: %s"
-                 % utils.shorten_long_string(res["instances"]))
+        log.info("Processed data: %s" % utils.shorten_long_string(res["instances"]))
         return {**inputs, **res}
 
     def _run_transformer(self, inputs: Dict):

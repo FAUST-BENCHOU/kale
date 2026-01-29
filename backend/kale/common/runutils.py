@@ -32,22 +32,23 @@ def ttl(timeout: int = None):
         try:
             timeout = float(timeout)
         except (ValueError, TypeError) as e:
-            raise TypeError("Timeout needs to be an integer or float: %s"
-                            % str(e))
+            raise TypeError("Timeout needs to be an integer or float: %s" % str(e))
 
         if timeout <= 0:
-            raise ValueError("Timeout value should be a positive integer."
-                             " Found value '%s'" % timeout)
+            raise ValueError(
+                "Timeout value should be a positive integer. Found value '%s'" % timeout
+            )
 
     def _ttl_signal_handler(_signal, _frame):
-        log.error("Timeout expired. This step was configured to run with a TTL"
-                  " of %s seconds. Stopping execution..." % timeout)
+        log.error(
+            "Timeout expired. This step was configured to run with a TTL"
+            " of %s seconds. Stopping execution..." % timeout
+        )
         utils.graceful_exit(-1)
 
     def _decorator_ttl(fn: Callable):
         def _ttl():
-            log.info("Starting timeout. User code TTL set to %s seconds."
-                     % timeout)
+            log.info("Starting timeout. User code TTL set to %s seconds." % timeout)
             signal.signal(signal.SIGALRM, _ttl_signal_handler)
             signal.setitimer(signal.ITIMER_REAL, timeout)
 
@@ -57,7 +58,9 @@ def ttl(timeout: int = None):
             signal.setitimer(signal.ITIMER_REAL, 0)
             log.info("User code executed successfully.")
             return res
+
         return _ttl
+
     return _decorator_ttl
 
 
@@ -69,22 +72,27 @@ def link_artifacts(artifacts: Dict, link=True):
     we would get a permission error.
     """
     if artifacts:
-        log.info("Registering step's artifacts: %s" %
-                 ", ".join("'%s'" % name for name in artifacts.keys()))
+        log.info(
+            "Registering step's artifacts: %s"
+            % ", ".join("'%s'" % name for name in artifacts.keys())
+        )
     else:
         log.info("This step has no artifacts")
 
     for name, path in artifacts.items():
         if not os.path.exists(path):
-            raise RuntimeError("Filepath '%s' for artifact '%s' does not"
-                               " exist." % (path, name))
+            raise RuntimeError(
+                "Filepath '%s' for artifact '%s' does not exist." % (path, name)
+            )
         if not os.path.isabs(path):
-            raise ValueError("Path '%s' for artifact '%s' is a relative path."
-                             " Please provide an absolute path."
-                             % (path, name))
+            raise ValueError(
+                "Path '%s' for artifact '%s' is a relative path."
+                " Please provide an absolute path." % (path, name)
+            )
         if os.path.isdir(path):
-            raise RuntimeError("Cannot create an artifact from path '%s':"
-                               " it is a folder." % path)
+            raise RuntimeError(
+                "Cannot create an artifact from path '%s': it is a folder." % path
+            )
         if link:
             # FIXME: Currently this supports just HTML artifacts
             kfputils.update_uimetadata(name)
