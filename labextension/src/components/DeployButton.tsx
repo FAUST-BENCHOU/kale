@@ -29,23 +29,24 @@ import { styled } from '@mui/material/styles';
 const DeployButtonContainer = styled('div')({
   '& .deploy-button': {
     // Add any specific styling for the deploy button container
-  },
+  }
 });
 
 const StyledButtonGroup = styled(ButtonGroup)({
-  width: '100%',
+  width: '100%'
 });
 
 const MainButton = styled(Button)({
   width: '100%',
+  whiteSpace: 'nowrap'
 });
 
 const DropdownButton = styled(Button)({
-  width: 'auto',
+  width: 'auto'
 });
 
 const StyledPopper = styled(Popper)({
-  zIndex: 2,
+  zIndex: 2
 });
 
 interface ISplitDeployButton {
@@ -64,15 +65,15 @@ export const SplitDeployButton: React.FunctionComponent<
   const options = [
     {
       label: 'Compile and Run',
-      value: 'run',
+      value: 'run'
     },
     { label: 'Compile and Upload', value: 'upload' },
-    { label: 'Compile and Save', value: 'compile' },
+    { label: 'Compile and Save', value: 'compile' }
   ];
 
   const handleMenuItemClick = (
     event: React.MouseEvent<HTMLLIElement>,
-    index: number,
+    index: number
   ) => {
     setSelectedIndex(index);
     setOpen(false);
@@ -102,7 +103,7 @@ export const SplitDeployButton: React.FunctionComponent<
     <DeployButtonContainer>
       <div className="deploy-button">
         <Grid container>
-          <Grid size={12} sx={{ padding: '4px 10px' }}>
+          <Grid size={12} sx={{ padding: '4px 6px' }}>
             <StyledButtonGroup
               variant="contained"
               color="primary"
@@ -141,7 +142,7 @@ export const SplitDeployButton: React.FunctionComponent<
                   {...TransitionProps}
                   style={{
                     transformOrigin:
-                      placement === 'bottom' ? 'center top' : 'center bottom',
+                      placement === 'bottom' ? 'center top' : 'center bottom'
                   }}
                 >
                   <Paper id="menu-list-grow">
