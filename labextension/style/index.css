@@ -107,6 +107,7 @@
 }
 
 /* Keep dropdown (split) button fixed size when panel is resized */
+/* stylelint-disable selector-class-pattern */
 .deploy-button .MuiButtonGroup-root {
   display: flex;
   width: 100%;
@@ -123,6 +124,7 @@
   min-width: 40px;
   width: 40px;
 }
+/* stylelint-enable selector-class-pattern */
 
 /* -----------------------------------------------------------------------------
 | Inputs
