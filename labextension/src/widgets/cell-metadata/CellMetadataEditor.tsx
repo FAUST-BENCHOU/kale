@@ -19,7 +19,14 @@ import { isCodeCellModel } from '@jupyterlab/cells';
 import CloseIcon from '@mui/icons-material/Close';
 import ColorUtils from '../../lib/ColorUtils';
 import { CellMetadataContext } from '../../lib/CellMetadataContext';
-import { Button, IconButton } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+} from '@mui/material';
 import { CellMetadataEditorDialog } from './CellMetadataEditorDialog';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
@@ -63,6 +70,8 @@ export const RESERVED_CELL_NAMES_CHIP_COLOR: { [id: string]: string } = {
   functions: 'a32626',
 };
 
+export const DEFAULT_BASE_IMAGE = 'python:3.12';
+
 const STEP_NAME_ERROR_MSG = `Step name must consist of lower case alphanumeric
  characters or '_', and can not start with a digit.`;
 
@@ -74,6 +83,8 @@ export interface IProps {
   limits?: { [id: string]: string };
   // Base image for this step
   baseImage?: string;
+  pipelineBaseImage?: string;
+  defaultBaseImage?: string;
 }
 
 // this stores the name of a block and its color (form the name hash)
@@ -90,6 +101,7 @@ interface IState {
   // XXX (stefano): statement of updateBlockDependenciesChoices and
   // XXX (stefano): updatePreviousStepName don't allow me.
   cellMetadataEditorDialog: boolean;
+  baseImageDialogOpen: boolean;
 }
 
 const DefaultState: IState = {
@@ -97,6 +109,7 @@ const DefaultState: IState = {
   stepNameErrorMsg: STEP_NAME_ERROR_MSG,
   blockDependenciesChoices: [],
   cellMetadataEditorDialog: false,
+  baseImageDialogOpen: false,
 };
 
 /**
@@ -117,6 +130,7 @@ export class CellMetadataEditor extends React.Component<IProps, IState> {
     this.updateCurrentCellType = this.updateCurrentCellType.bind(this);
     this.updatePrevBlocksNames = this.updatePrevBlocksNames.bind(this);
     this.toggleTagsEditorDialog = this.toggleTagsEditorDialog.bind(this);
+    this.toggleBaseImageDialog = this.toggleBaseImageDialog.bind(this);
   }
 
   componentWillUnmount() {
@@ -373,6 +387,12 @@ export class CellMetadataEditor extends React.Component<IProps, IState> {
     });
   }
 
+  toggleBaseImageDialog() {
+    this.setState({
+      baseImageDialogOpen: !this.state.baseImageDialogOpen,
+    });
+  }
+
   updateBaseImage = (value: string) => {
     const currentCellMetadata = {
       blockName: this.props.stepName || '',
@@ -452,21 +472,28 @@ export class CellMetadataEditor extends React.Component<IProps, IState> {
                   options={this.state.blockDependenciesChoices}
                   variant="outlined"
                   selected={this.props.stepDependencies || []}
-                  style={{ width: '35%' }}
+                  style={{ width: '30%' }}
                 />
               ) : (
                 ''
               )}
 
               {cellType === 'step' ? (
-                <Input
-                  label={'Base Image'}
-                  updateValue={this.updateBaseImage}
-                  value={this.props.baseImage || ''}
-                  placeholder="e.g., python:3.11"
-                  variant="outlined"
-                  style={{ width: '25%' }}
-                />
+                <div style={{ padding: 0, marginRight: '4px' }}>
+                  <Button
+                    disabled={
+                      !(this.props.stepName && this.props.stepName.length > 0)
+                    }
+                    color="primary"
+                    variant="contained"
+                    size="small"
+                    title="Base Image"
+                    onClick={() => this.toggleBaseImageDialog()}
+                    style={{ width: '5%' }}
+                  >
+                    IMAGE
+                  </Button>
+                </div>
               ) : (
                 ''
               )}
@@ -515,6 +542,51 @@ export class CellMetadataEditor extends React.Component<IProps, IState> {
           limits={this.props.limits || {}}
           updateLimits={this.updateCurrentLimits}
         />
+        <Dialog
+          open={this.state.baseImageDialogOpen}
+          onClose={() => this.toggleBaseImageDialog()}
+          fullWidth={true}
+          maxWidth={'sm'}
+        >
+          <DialogTitle>Base Image for Step</DialogTitle>
+          <DialogContent>
+            <p style={{ margin: '8px 0' }}>
+              Default:{' '}
+              <strong>
+                {this.props.defaultBaseImage || DEFAULT_BASE_IMAGE}
+              </strong>
+            </p>
+            <Input
+              variant="outlined"
+              label="Custom Base Image"
+              value={this.props.baseImage || ''}
+              updateValue={(v: string) => this.updateBaseImage(v)}
+              placeholder={
+                this.props.pipelineBaseImage ||
+                this.props.defaultBaseImage ||
+                DEFAULT_BASE_IMAGE
+              }
+              style={{ width: '100%', marginTop: '8px' }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                this.updateBaseImage('');
+                this.toggleBaseImageDialog();
+              }}
+              color="secondary"
+            >
+              Reset to Default
+            </Button>
+            <Button
+              onClick={() => this.toggleBaseImageDialog()}
+              color="primary"
+            >
+              Ok
+            </Button>
+          </DialogActions>
+        </Dialog>
       </React.Fragment>
     );
   }

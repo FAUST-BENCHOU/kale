@@ -23,14 +23,13 @@ from jinja2 import Environment, FileSystemLoader, PackageLoader
 
 from kale import __version__ as KALE_VERSION
 from kale.common import graphutils, kfputils, utils
-from kale.pipeline import Pipeline, PipelineParam, Step
+from kale.common.imports import get_packages_to_install
+from kale.pipeline import DEFAULT_BASE_IMAGE, Pipeline, PipelineParam, Step
 
 log = logging.getLogger(__name__)
 
-PY_FN_TEMPLATE = "py_function_template.jinja2"
 NB_FN_TEMPLATE = "nb_function_template.jinja2"
 PIPELINE_TEMPLATE = "pipeline_template.jinja2"
-PIPELINE_ORIGIN = {"nb": NB_FN_TEMPLATE, "py": PY_FN_TEMPLATE}
 
 KFP_DSL_ARTIFACT_IMPORTS = [
     "Dataset",
@@ -103,6 +102,10 @@ class Compiler:
 
         Returns (str): A Python executable script
         """
+        # Fail early if there are no steps in the pipeline.
+        if not hasattr(self.pipeline, "steps") or not self.pipeline.steps:
+            raise ValueError("Task is missing from pipeline.")
+
         # List of lightweight components generated code
         lightweight_components = [
             self.generate_lightweight_component(step) for step in self.pipeline.steps
@@ -111,7 +114,7 @@ class Compiler:
         return pipeline_code
 
     def generate_lightweight_component(self, step: Step):
-        """Generate Python code using the function template."""
+        """Generate Python code using the notebook function template."""
         step_source_raw = step.source
 
         def _encode_source(s):
@@ -120,14 +123,12 @@ class Compiler:
                 [line.encode("unicode_escape").decode("utf-8") for line in s.splitlines()]
             )
 
-        if self.pipeline.processor.id == "nb":
-            # Since the code will be wrapped in triple quotes inside the
-            # template, we need to escape triple quotes as they will not be
-            # escaped by encode("unicode_escape").
-            step.source = [re.sub(r"'''", "\\'\\'\\'", _encode_source(s)) for s in step_source_raw]
+        # Since the code will be wrapped in triple quotes inside the
+        # template, we need to escape triple quotes as they will not be
+        # escaped by encode("unicode_escape").
+        step.source = [re.sub(r"'''", "\\'\\'\\'", _encode_source(s)) for s in step_source_raw]
 
-        _template_filename = PIPELINE_ORIGIN.get(self.pipeline.processor.id)
-        template = self._get_templating_env().get_template(_template_filename)
+        template = self._get_templating_env().get_template(NB_FN_TEMPLATE)
 
         # Separate parameters with and without defaults for proper ordering
         params_without_defaults = [f"{step.name}_html_report: Output[HTML]"]
@@ -199,6 +200,7 @@ class Compiler:
             step_inputs=step_inputs,
             step_outputs=step_outputs,
             kfp_dsl_artifact_imports=KFP_DSL_ARTIFACT_IMPORTS,
+            default_base_image=DEFAULT_BASE_IMAGE,
             **self.pipeline.config.to_dict(),
         )
         return autopep8.fix_code(fn_code)
@@ -260,41 +262,27 @@ class Compiler:
         return autopep8.fix_code(pipeline_code)
 
     def _get_package_list_from_imports(self):
-        """Extracts unique package names from the tagged imports cell.
+        """Extract pip-installable package names from imports using AST.
 
-        Args:
-            imports_str: A string containing Python import statements.
+        Uses the imports module to parse Python import statements via AST
+        and resolve them to their corresponding PyPI package names. This
+        properly handles all import forms and filters out stdlib modules.
 
         Returns:
-            A list of unique top-level package names.
+            A sorted list of unique PyPI package names to install.
         """
         package_names = set()
+
+        # Always include kale and kfp as dependencies
         if KALE_VERSION != "0+unknown":
             package_names.add(f"kubeflow-kale=={KALE_VERSION}")
         else:
             package_names.add("kubeflow-kale")
         package_names.add("kfp>=2.0.0")
-        lines = self.imports_and_functions.strip().split("\n")
 
-        for line in lines:
-            line = line.strip()
-            if line.startswith("import "):
-                # For 'import package' or 'import package as alias'
-                parts = line.split(" ")
-                if len(parts) > 1:
-                    package_name = parts[1].split(".")[0]
-                    if package_name == "random":
-                        package_name = "random2"
-                    if package_name == "sklearn":
-                        package_name = "scikit-learn"
-                    package_names.add(package_name)
-            elif line.startswith("from "):
-                parts = line.split(" ")
-                if len(parts) > 1:
-                    package_name = parts[1].split(".")[0]
-                    if package_name == "sklearn":
-                        package_name = "scikit-learn"
-                    package_names.add(package_name)
+        # Parse imports using AST and resolve to PyPI package names
+        package_names.update(get_packages_to_install(self.imports_and_functions))
+
         return sorted(package_names)
 
     def _get_templating_env(self, templates_path=None):
